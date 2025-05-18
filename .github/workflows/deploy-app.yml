@@ -1,0 +1,47 @@
+name: Deploy Edge App
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to (production or stage)'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - stage
+
+      edge_app_name:
+        description: 'Folder name of the edge app (under edge-apps/)'
+        required: true
+        default: ''
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.edge_app_name }} to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    env:
+      APP_PATH: edge-apps/${{ inputs.edge_app_name }}
+      MANIFEST_FILE_NAME: ${{ inputs.environment == 'production' && 'screenly.yml' || 'screenly_qc.yml' }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set API Token
+        id: set_token
+        run: |
+          if [ "${{ inputs.environment }}" = "production" ]; then
+            echo "TOKEN=${{ secrets.SCREENLY_API_TOKEN }}" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.environment }}" = "stage" ]; then
+            echo "TOKEN=${{ secrets.SCREENLY_API_TOKEN_AUTOMATED_QC }}" >> $GITHUB_OUTPUT
+          else
+            echo "Invalid environment selected"; exit 1;
+          fi
+
+      - name: Deploy Edge App
+        uses: screenly/cli@master
+        with:
+          screenly_api_token: ${{ steps.set_token.outputs.TOKEN }}
+          cli_commands: edge-app deploy --path=${{ env.APP_PATH }} --manifest-file=${{ env.APP_PATH }}/${{ env.MANIFEST_FILE_NAME }}
