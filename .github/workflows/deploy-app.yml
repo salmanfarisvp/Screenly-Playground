@@ -1,4 +1,9 @@
+---
 name: Deploy Edge App
+description: |
+  Manually deploy any edge app to either the staging(QC) or production environment.
+  Select the app folder and target environment, and this action will run the
+  appropriate deploy command using the correct manifest and API token.
 
 on:
   workflow_dispatch:
@@ -41,7 +46,4 @@ jobs:
           fi
 
       - name: Deploy Edge App
-        uses: screenly/cli@master
-        with:
-          screenly_api_token: ${{ steps.set_token.outputs.TOKEN }}
-          cli_commands: edge-app deploy --path=${{ env.APP_PATH }} --manifest-file=${{ env.APP_PATH }}/${{ env.MANIFEST_FILE_NAME }}
+        uses
